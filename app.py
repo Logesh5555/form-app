@@ -8,11 +8,20 @@ load_dotenv()
 
 app = Flask(__name__)
 
+# ✅ HOME PAGE (FORM PAGE)
+@app.route('/')
+def home():
+    return render_template("form.html")
+
+
+# ✅ SUCCESS PAGE (GET ONLY)
 @app.route('/success')
 def success():
     name = request.args.get('name')
     return render_template("success.html", name=name)
 
+
+# ✅ SUBMIT (POST ONLY)
 @app.route('/submit', methods=['POST'])
 def submit():
     name = request.form['name']
@@ -31,6 +40,7 @@ def submit():
             port=int(os.environ.get("DB_PORT")),
             connection_timeout=5
         )
+
         cursor = db.cursor()
 
         query = "INSERT INTO submissions (name, email, message) VALUES (%s, %s, %s)"
@@ -46,10 +56,12 @@ def submit():
             cursor.close()
         if db:
             db.close()
+
+    # ✅ IMPORTANT: REDIRECT AFTER POST
     return redirect(url_for('success', name=name))
 
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
-    print(f"🚀 Server starting on port {port}...")
+    print(f"🚀 Server running on port {port}")
     serve(app, host="0.0.0.0", port=port)
