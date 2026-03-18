@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
 import mysql.connector
 import os
 from waitress import serve
@@ -8,9 +8,10 @@ load_dotenv()
 
 app = Flask(__name__)
 
-@app.route('/')
-def form():
-    return render_template("form.html")
+@app.route('/success')
+def success():
+    name = request.args.get('name')
+    return render_template("success.html", name=name)
 
 @app.route('/submit', methods=['POST'])
 def submit():
@@ -22,22 +23,14 @@ def submit():
     cursor = None
 
     try:
-        # ✅ Check env variables
-        if not os.environ.get("DB_HOST"):
-            return "❌ Database not configured"
-
         db = mysql.connector.connect(
             host=os.environ.get("DB_HOST"),
             user=os.environ.get("DB_USER"),
             password=os.environ.get("DB_PASSWORD"),
             database=os.environ.get("DB_NAME"),
-            port=int(os.environ.get("DB_PORT", 41059)),
+            port=int(os.environ.get("DB_PORT")),
             connection_timeout=5
         )
-
-        if db.is_connected():
-            print("✅ Database Connected")
-
         cursor = db.cursor()
 
         query = "INSERT INTO submissions (name, email, message) VALUES (%s, %s, %s)"
@@ -46,7 +39,6 @@ def submit():
         db.commit()
 
     except Exception as e:
-        print("❌ Error:", e)
         return f"Database Error: {e}"
 
     finally:
@@ -54,8 +46,7 @@ def submit():
             cursor.close()
         if db:
             db.close()
-
-    return render_template("success.html", name=name)
+    return redirect(url_for('success', name=name))
 
 
 if __name__ == "__main__":
